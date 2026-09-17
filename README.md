@@ -94,5 +94,14 @@ The project also gave me my first practical opportunity to apply **window aggreg
 * NHS Open Data
 
 ---
+## Next Steps
+
+I plan to extend the project by exploring:
+
+Rewriting the analysis using CTEs
+Comparing DNA trends between GP practices
+Parameterising GP practice selection
+
 
 *This repository is a learning and portfolio project developed from work completed during the T-SQL Mastery Bootcamp.*
+---
