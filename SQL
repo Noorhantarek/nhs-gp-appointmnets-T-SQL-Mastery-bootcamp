@@ -1,0 +1,50 @@
+
+# Q1: How do DNA rates compare across different appointment modes, such as Face-to-Face, Telephone and Video, and how does this change month by month during 2025?
+
+SELECT FORMAT([Effective_Snapshot_Date], 'yyyy-MM') AS Effective_Date, [Appointment_Mode],
+SUM([Count]) AS Total_Appointments,
+SUM( CASE WHEN [Appointment_Status] = 'DNA' THEN [Count] ELSE 0 END ) AS DNA_Count,
+ROUND( 100.0 * 
+SUM( CASE WHEN [Appointment_Status] = 'DNA' THEN [Count] ELSE 0 END ) / NULLIF(SUM([Count]), 0), 2 )
+AS DNA_Percentage
+FROM [TSQLHero_Lakehouse].[dbo].[GP_Appointments] WHERE YEAR([Effective_Snapshot_Date]) = 2025 GROUP BY FORMAT([Effective_Snapshot_Date], 'yyyy-MM'), [Appointment_Mode] ORDER BY Effective_Date, [Appointment_Mode];
+
+# What does this measure?
+# The denominator here is the total number of appointments for a specific appointment mode within that month.
+
+# For example:
+# Of all Face-to-Face appointments in January 2025, what percentage resulted in a DNA?
+# This makes it possible to compare the DNA rate between different modes rather than simply comparing the absolute number of missed appointments.
+
+# Q2: Of all DNA appointments occurring in a given month, what percentage came from each appointment mode?
+
+SELECT Date, [Appointment_Mode], DNA_Apps,
+SUM(DNA_Apps) OVER ( PARTITION BY Date ) AS Monthly_Total_DNA, 
+ROUND( 100.0 * DNA_Apps / NULLIF( SUM(DNA_Apps) OVER (PARTITION BY Date), 0 ), 2 ) AS Pct_Of_Monthly_DNA
+FROM ( SELECT FORMAT([Effective_Snapshot_Date], 'yyyy-MM') AS Date, [Appointment_Mode], SUM( CASE WHEN [Appointment_Status] = 'DNA' THEN [Count] ELSE 0 END ) AS DNA_Apps
+FROM [TSQLHero_Lakehouse].[dbo].[GP_Appointments]
+WHERE YEAR([Effective_Snapshot_Date]) = 2025 
+GROUP BY FORMAT([Effective_Snapshot_Date], 'yyyy-MM'), [Appointment_Mode] )
+AS MonthlyModeDNA
+ORDER BY Date, [Appointment_Mode];
+
+# Why use a window function?
+# The subquery produces one row for each combination of:
+# Month × Appointment Mode
+# The window expression:
+# SUM(DNA_Apps) OVER (PARTITION BY Date)
+# then calculates the total DNA volume for the month without collapsing the individual appointment-mode rows.
+# This allows each mode's DNA count to be divided by the monthly total.
+
+# Q3: For a given month, what percentage of DNA appointments came from Telephone versus Face-to-Face appointments?
+SELECT Date, [Appointment_Mode], DNA_Apps, 
+SUM(DNA_Apps) OVER ( PARTITION BY Date ) AS Monthly_Total_DNA,
+ROUND( 100.0 * DNA_Apps / NULLIF( SUM(DNA_Apps) OVER (PARTITION BY Date), 0 ), 2 ) AS Pct_Of_Monthly_DNA
+FROM ( SELECT FORMAT([Effective_Snapshot_Date], 'yyyy-MM') AS Date, [Appointment_Mode],
+SUM( CASE WHEN [Appointment_Status] = 'DNA' THEN [Count] ELSE 0 END ) AS DNA_Apps
+FROM [TSQLHero_Lakehouse].[dbo].[GP_Appointments]
+WHERE YEAR([Effective_Snapshot_Date]) = 2025 AND [Appointment_Mode] IN ('Telephone', 'Face-to-Face')
+GROUP BY FORMAT([Effective_Snapshot_Date], 'yyyy-MM'), [Appointment_Mode]
+) AS MonthlyModeDNA
+ORDER BY Date, [Appointment_Mode];
+.........
