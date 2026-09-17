@@ -1,5 +1,4 @@
-# NHS GP Appointments: DNA Analysis with T-SQL
-# NHS GP Appointments: DNA Analysis with T-SQL
+# NHS GP Appointments: DNA Analysis with T-SQL# NHS GP Appointments: DNA Analysis with T-SQL
 
 ## Project Overview
 
